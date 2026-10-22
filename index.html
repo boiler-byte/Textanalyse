@@ -200,7 +200,7 @@
       border: 1px solid #0ff;
       box-shadow: inset 0 0 30px #000, 0 0 25px #0ff;
       margin-top: 1rem;
-	  position: relative;
+      position: relative;
     }
 
     /* Stoppwort-Toggle */
@@ -272,9 +272,114 @@
       border-radius: 10px;
       box-shadow: 0 0 15px #0ff;
     }
-	
-	.blocks, .blocks span { display:block !important; text-fit:shrink; }
-	
+
+    .blocks, .blocks span { display:block !important; text-fit:shrink; }
+
+    /* ----- CSS TOOLTIPS ----- */
+    [data-tooltip] {
+      position: relative;
+      cursor: help;
+    }
+
+    /* Unterstreichung als visueller Hinweis */
+    .stat-label[data-tooltip] {
+      border-bottom: 1px dotted rgba(0, 255, 255, 0.5);
+      padding-bottom: 1px;
+    }
+
+    [data-tooltip]::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: calc(100% + 10px);
+      left: 50%;
+      transform: translateX(-50%) translateY(6px);
+      background: rgba(0, 20, 35, 0.97);
+      color: #d0f0ff;
+      border: 1px solid #0ff;
+      border-radius: 10px;
+      padding: 0.6rem 0.9rem;
+      font-size: 0.82rem;
+      line-height: 1.45;
+      width: max-content;
+      max-width: 280px;
+      white-space: normal;
+      text-align: left;
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.5), 0 0 30px rgba(255, 0, 255, 0.25);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+      z-index: 100;
+      font-weight: 400;
+      letter-spacing: 0.3px;
+    }
+
+    /* Pfeil */
+    [data-tooltip]::before {
+      content: '';
+      position: absolute;
+      bottom: calc(100% + 4px);
+      left: 50%;
+      transform: translateX(-50%) translateY(6px);
+      border: 6px solid transparent;
+      border-top-color: #0ff;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+      z-index: 100;
+    }
+
+    [data-tooltip]:hover::after,
+    [data-tooltip]:focus-visible::after {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    [data-tooltip]:hover::before,
+    [data-tooltip]:focus-visible::before {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Tooltip für Toggle-Label (rechts statt mittig, da Platzmangel) */
+    .stopword-toggle label[data-tooltip]::after {
+      left: 0;
+      transform: translateX(0) translateY(6px);
+    }
+    .stopword-toggle label[data-tooltip]::before {
+      left: 20px;
+      transform: translateX(0) translateY(6px);
+    }
+    .stopword-toggle label[data-tooltip]:hover::after,
+    .stopword-toggle label[data-tooltip]:focus-visible::after {
+      transform: translateX(0) translateY(0);
+    }
+    .stopword-toggle label[data-tooltip]:hover::before,
+    .stopword-toggle label[data-tooltip]:focus-visible::before {
+      transform: translateX(0) translateY(0);
+    }
+
+    /* Für die Verteilungszeile: Tooltip nicht mittig, da sehr breit */
+    .stat-list li.blocks .stat-label[data-tooltip]::after {
+      left: 0;
+      transform: translateX(0) translateY(6px);
+      max-width: 320px;
+    }
+    .stat-list li.blocks .stat-label[data-tooltip]::before {
+      left: 20px;
+      transform: translateX(0) translateY(6px);
+    }
+    .stat-list li.blocks .stat-label[data-tooltip]:hover::after,
+    .stat-list li.blocks .stat-label[data-tooltip]:focus-visible::after {
+      transform: translateX(0) translateY(0);
+    }
+    .stat-list li.blocks .stat-label[data-tooltip]:hover::before,
+    .stat-list li.blocks .stat-label[data-tooltip]:focus-visible::before {
+      transform: translateX(0) translateY(0);
+    }
   </style>
 </head>
 <body>
@@ -297,14 +402,17 @@
           <li><span class="stat-label">Sätze (Satzzeichen)</span><span class="stat-value" id="sentenceCount">0</span></li>
           <li><span class="stat-label">Absätze (Leerzeilen)</span><span class="stat-value" id="paragraphCount">0</span></li>
         </ul>
-      </div>
-
-      <!-- Panel 2: Lesbarkeit -->
-      <div class="panel">
-        <h2>Lesbarkeit</h2>
+        <!-- Panel 2: Lesbarkeit -->
+        <h2 style="margin-top:1.2rem">Lesbarkeit</h2>
         <ul class="stat-list">
-          <li><span class="stat-label">Flesch (Amstad)</span><span class="stat-value" id="fleschScore">—</span></li>
-          <li><span class="stat-label">Wiener Sachtextformel</span><span class="stat-value" id="wienerScore">—</span></li>
+          <li>
+            <span class="stat-label" data-tooltip="Flesch (Amstad): Lesbarkeitsformel für Deutsch. Höhere Werte = leichter lesbar. Formel: 180 − (Ø Satzlänge × 58,5) − (Ø Silben/Wort × 0,5).">Flesch (Amstad)</span>
+            <span class="stat-value" id="fleschScore">—</span>
+          </li>
+          <li>
+            <span class="stat-label" data-tooltip="Wiener Sachtextformel: Schulklassen-Niveau für Sachtexte. Niedrigere Werte = einfacher. Berücksichtigt Satzlänge, Silbenzahl, lange Wörter und lange Sätze.">Wiener Sachtextformel</span>
+            <span class="stat-value" id="wienerScore">—</span>
+          </li>
           <li><span class="stat-label">Ø Wortlänge (Zeichen)</span><span class="stat-value" id="avgWordLength">0</span></li>
           <li><span class="stat-label">Ø Satzlänge (Wörter)</span><span class="stat-value" id="avgSentenceLength">0</span></li>
         </ul>
@@ -324,14 +432,20 @@
         <h2>Wortschatz</h2>
         <ul class="stat-list">
           <li><span class="stat-label">Unique Words</span><span class="stat-value" id="uniqueWords">0</span></li>
-          <li><span class="stat-label">Type-Token-Ratio</span><span class="stat-value" id="typeTokenRatio">0</span></li>
+          <li>
+            <span class="stat-label" data-tooltip="Type-Token-Ratio: Verhältnis einzigartiger Wörter (Types) zur Gesamtwortzahl (Tokens). Höherer Wert = größere Wortvielfalt.">Type-Token-Ratio</span>
+            <span class="stat-value" id="typeTokenRatio">0</span>
+          </li>
           <li class="blocks"><span class="stat-label">Längstes Wort</span><span class="stat-value" id="longestWord">—</span></li>
-          <li class="blocks"><span class="stat-label">Wortlängen-Verteilung</span><span class="stat-value" id="wordLengthDistribution">—</span></li>
+          <li class="blocks">
+            <span class="stat-label" data-tooltip="Wortlängen-Verteilung: Anzahl der Wörter je Wortlänge (z. B. „3:5“ = 5 Wörter mit 3 Buchstaben). Zeigt, wie kurz oder lang die verwendeten Wörter sind.">Wortlängen-Verteilung</span>
+            <span class="stat-value" id="wordLengthDistribution">—</span>
+          </li>
         </ul>
         <div style="margin-top: 1rem;">
           <div class="stopword-toggle">
             <input type="checkbox" id="stopwordToggle" checked>
-            <label for="stopwordToggle">Stoppwörter ausblenden (Top-Wörter)</label>
+            <label for="stopwordToggle" data-tooltip="Stoppwörter sind häufige Funktionswörter (z. B. „der“, „und“, „ist“). Ausblenden entfernt sie aus der Top-Wörter-Liste und der Wortwolke, damit inhaltstragende Wörter sichtbarer werden.">Stoppwörter ausblenden (Top-Wörter)</label>
           </div>
           <div style="font-size: 0.95rem; color: #b0d0ff; margin-bottom: 0.3rem;">Häufigste Wörter:</div>
           <div class="top-words" id="topWordsContainer"></div>
@@ -430,35 +544,25 @@
         const longWordPercent = wordCount > 0 ? (longWords / wordCount) * 100 : 0;
 
         // Flesch-Reading-Ease (Amstad für Deutsch)
-        // Formel: 180 - (ASL * 58.5) - (ASW * 0.5)   [ASL = durchschn. Satzlänge, ASW = durchschn. Silben pro Wort]
-        // Silben grob schätzen: Anzahl der Vokalgruppen (a,e,i,o,u,ä,ö,ü) pro Wort
         function countSyllablesGerman(word) {
-          // Vokale inkl. Umlaute, pro Wort zählen (vereinfacht)
           const vowelGroups = word.match(/[aeiouäöüy]+/gi);
           return vowelGroups ? vowelGroups.length : 1;
         }
         let totalSyllables = 0;
         words.forEach(w => { totalSyllables += countSyllablesGerman(w); });
         const avgSyllablesPerWord = wordCount > 0 ? totalSyllables / wordCount : 0;
-        // Amstad: 180 - (ASL * 58.5) - (ASW * 0.5)  (ASL = average sentence length in words, ASW = average syllables per word)
         const flesch = wordCount > 0 && sentenceCountValue > 0
           ? 180 - (avgSentLen * 58.5) - (avgSyllablesPerWord * 0.5)
           : 0;
 
-        // Wiener Sachtextformel (Version 1: MS = 0.1935*ASL + 0.1672*ASW + 0.1297*MSW - 0.0327*SL - 0.875)
-        // MSW = Prozent der Wörter mit mehr als 6 Buchstaben, SL = Prozent der Sätze mit mehr als 12 Wörtern? 
-        // Einfache Variante: Wiener Sachtextformel 1:
-        // MS = 0.1935 * ASL + 0.1672 * ASW + 0.1297 * MSW - 0.0327 * SL - 0.875
-        // Dabei: ASL = durchschnittliche Satzlänge (Wörter), ASW = durchschnittliche Silbenzahl pro Wort,
-        // MSW = Prozent der Wörter mit mehr als 6 Buchstaben, SL = Prozent der Sätze mit mehr als 12 Wörtern (hier als Anteil?)
-        // Vereinfachung: SL = (Sätze mit >12 Wörtern / Gesamtsätze) * 100
+        // Wiener Sachtextformel
         const sentencesArray = text.split(/[.!?…]+/).filter(s => s.trim().length > 0);
         const longSentences = sentencesArray.filter(s => {
           const w = s.trim().match(/\p{L}+/gu) || [];
           return w.length > 12;
         }).length;
         const slPercent = sentencesArray.length > 0 ? (longSentences / sentencesArray.length) * 100 : 0;
-        const mswPercent = longWordPercent; // Anteil Wörter >6 Buchstaben in Prozent
+        const mswPercent = longWordPercent;
 
         const wiener = wordCount > 0 && sentenceCountValue > 0
           ? 0.1935 * avgSentLen + 0.1672 * avgSyllablesPerWord + 0.1297 * mswPercent - 0.0327 * slPercent - 0.875
@@ -469,11 +573,11 @@
         const uniqueCount = uniqueSet.size;
         const ttr = wordCount > 0 ? (uniqueCount / wordCount) : 0;
 
-        // Längstes Wort (in Originalschreibweise, aber basierend auf Buchstabenwörtern)
+        // Längstes Wort
         let longest = '';
         letterMatches.forEach(w => { if (w.length > longest.length) longest = w; });
 
-        // Wortlängen-Verteilung (kompakt: z.B. "1:2 2:5 3:10 ...")
+        // Wortlängen-Verteilung
         const lengthMap = new Map();
         words.forEach(w => {
           const len = w.length;
@@ -491,13 +595,12 @@
         });
         const sortedFreq = Array.from(freqMap.entries()).sort((a, b) => b[1] - a[1]).slice(0, 12);
 
-        // ----- Zeit-Schätzungen (basierend auf Wortzahl (Regex)) -----
-        const wordCountForTime = wordCount; // alternativ wordsByWhitespace, aber Regex ist genauer
-        const reading200Sec = wordCountForTime > 0 ? (wordCountForTime / 200) * 60 : 0; // in Sekunden
+        // ----- Zeit-Schätzungen -----
+        const wordCountForTime = wordCount;
+        const reading200Sec = wordCountForTime > 0 ? (wordCountForTime / 200) * 60 : 0;
         const reading250Sec = wordCountForTime > 0 ? (wordCountForTime / 250) * 60 : 0;
         const speakingSec = wordCountForTime > 0 ? (wordCountForTime / 130) * 60 : 0;
 
-        // Formatierung der Zeit (Minuten:Sekunden)
         function formatTime(seconds) {
           if (seconds === 0) return '0 s';
           const mins = Math.floor(seconds / 60);
@@ -544,31 +647,21 @@
         readingTime250.textContent = formatTime(reading250Sec);
         speakingTime.textContent = formatTime(speakingSec);
 
-        // ----- Wortwolke (wordcloud2.js) -----
-        // Basierend auf Häufigkeiten (ohne Stoppwörter, falls aktiviert)
-        const cloudWords = [];
+        // ----- Wortwolke -----
         const cloudFreqMap = new Map();
-        // Für die Wortwolke nehmen wir alle Wörter (gefiltert nach Stoppwörtern, wenn aktiv)
         words.forEach(w => {
           if (useStopwordsFilter && STOPWORDS.has(w)) return;
           cloudFreqMap.set(w, (cloudFreqMap.get(w) || 0) + 1);
         });
-        cloudFreqMap.forEach((count, word) => {
-          // wordcloud2 erwartet [word, weight]
-          cloudFreqMap.set(word, count);
-        });
-        const cloudList = Array.from(cloudFreqMap.entries()).map(([word, count]) => [word, count * 10]); // skalierung
+        const cloudList = Array.from(cloudFreqMap.entries()).map(([word, count]) => [word, count * 10]);
 
-        // Canvas-Größe anpassen
         const canvasEl = wordcloudCanvas;
-        const rect = canvasEl.getBoundingClientRect();
-        // WordCloud2 nutzt ein internes Canvas, wir übergeben das Element
         if (cloudList.length > 0 && typeof WordCloud !== 'undefined') {
           try {
             WordCloud(canvasEl, {
               list: cloudList,
               gridSize: 8,
-              weightFactor: function (w) { return Math.min(60, w * 2 + 10); }, // dynamische Größe
+              weightFactor: function (w) { return Math.min(60, w * 2 + 10); },
               fontFamily: 'Segoe UI, sans-serif',
               color: function () {
                 const colors = ['#0ff', '#f0f', '#8f8', '#ff8', '#8ff', '#f8f', '#0ff', '#f0f'];
@@ -586,7 +679,6 @@
             canvasEl.innerHTML = '<div style="color:#0ff; text-align:center; padding:2rem;">Wortwolke nicht verfügbar</div>';
           }
         } else {
-          // Fallback: Canvas leeren und Nachricht
           const ctx = canvasEl.getContext('2d');
           if (ctx) {
             ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
@@ -602,9 +694,8 @@
       // Initiale Analyse
       updateAll();
 
-      // Bei Größenänderung des Fensters ggf. Wortwolke neu zeichnen (optional)
+      // Bei Größenänderung neu zeichnen
       window.addEventListener('resize', () => {
-        // Kurze Verzögerung, um Layout-Änderungen abzuwarten
         setTimeout(updateAll, 100);
       });
     })();
