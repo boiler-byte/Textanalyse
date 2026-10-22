@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neon Textanalyse · Dunkel & Cinematic</title>
+  <!-- wordcloud2.js (CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/wordcloud2.js/1.0.2/wordcloud2.min.js"></script>
+  <style>
+    /* ----- NEON DUNKEL CINEMATIC DESIGN ----- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', 'Poppins', system-ui, sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at 20% 20%, #0b0e1a, #030509);
+      min-height: 100vh;
+      padding: 2rem 1.5rem;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      color: #e0eaff;
+    }
+
+    /* Hauptcontainer – Glassmorphismus + Neon-Rahmen */
+    .analyzer-container {
+      max-width: 1500px;
+      width: 100%;
+      background: rgba(8, 12, 22, 0.75);
+      backdrop-filter: blur(16px) saturate(180%);
+      border: 1px solid rgba(0, 255, 255, 0.25);
+      border-radius: 3rem;
+      padding: 2rem 2.5rem;
+      box-shadow: 0 0 40px rgba(0, 255, 255, 0.15), 0 0 100px rgba(255, 0, 200, 0.1), inset 0 0 20px rgba(0, 255, 200, 0.1);
+      transition: box-shadow 0.3s;
+    }
+
+    .analyzer-container:hover {
+      box-shadow: 0 0 60px rgba(0, 255, 255, 0.3), 0 0 120px rgba(255, 0, 200, 0.2), inset 0 0 30px rgba(0, 255, 200, 0.2);
+    }
+
+    h1 {
+      font-size: 2.8rem;
+      font-weight: 600;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(135deg, #a0f0ff, #ff9ef0, #b5ffb5);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      filter: drop-shadow(0 0 15px cyan) drop-shadow(0 0 30px magenta);
+      border-bottom: 2px solid rgba(0, 255, 255, 0.4);
+      padding-bottom: 0.75rem;
+    }
+
+    /* Textarea – Neon-Fokus */
+    .input-area {
+      width: 100%;
+      background: rgba(0, 10, 20, 0.8);
+      border: 2px solid #2a3f5e;
+      border-radius: 2rem;
+      padding: 1.5rem 2rem;
+      font-size: 1.1rem;
+      line-height: 1.6;
+      color: #e6f7ff;
+      resize: vertical;
+      min-height: 220px;
+      outline: none;
+      box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), 0 0 15px rgba(0, 255, 255, 0.2);
+      transition: border 0.2s, box-shadow 0.2s;
+      caret-color: #0ff;
+    }
+
+    .input-area:focus {
+      border-color: #0ff;
+      box-shadow: inset 0 0 20px #000, 0 0 30px #0ff, 0 0 60px #f0f;
+    }
+
+    /* Grid für die Panels */
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.8rem;
+      margin-top: 2.5rem;
+    }
+
+    .panel {
+      background: rgba(0, 15, 25, 0.6);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(0, 255, 255, 0.3);
+      border-radius: 2rem;
+      padding: 1.5rem 1.8rem;
+      box-shadow: 0 0 25px rgba(0, 255, 255, 0.15), inset 0 0 15px rgba(0, 255, 255, 0.05);
+      transition: all 0.3s;
+    }
+
+    .panel:hover {
+      border-color: #f0f;
+      box-shadow: 0 0 35px rgba(255, 0, 255, 0.3), inset 0 0 25px rgba(255, 0, 255, 0.1);
+    }
+
+    .panel h2 {
+      font-size: 1.6rem;
+      font-weight: 500;
+      margin-bottom: 1.3rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #9efff0;
+      text-shadow: 0 0 10px #0ff, 0 0 25px #0ff;
+      border-left: 6px solid #f0f;
+      padding-left: 1rem;
+    }
+
+    .stat-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .stat-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-size: 1.15rem;
+      border-bottom: 1px dashed rgba(0, 255, 255, 0.2);
+      padding-bottom: 0.5rem;
+    }
+
+    .stat-label {
+      color: #b0d0ff;
+      font-weight: 400;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+      font-weight: 600;
+      color: #fff;
+      text-shadow: 0 0 8px #0ff, 0 0 18px #0ff;
+      background: rgba(0, 255, 255, 0.1);
+      padding: 0.1rem 0.8rem;
+      border-radius: 20px;
+    }
+
+    /* Fortschrittsbalken für lange Wörter */
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #121f2f;
+      border-radius: 10px;
+      margin-top: 5px;
+      overflow: hidden;
+      box-shadow: inset 0 0 5px #000;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #0ff, #f0f);
+      border-radius: 10px;
+      box-shadow: 0 0 15px #0ff, 0 0 25px #f0f;
+      transition: width 0.4s;
+    }
+
+    /* Top-Wörter Liste */
+    .top-words {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.7rem;
+      margin-top: 0.8rem;
+    }
+
+    .word-chip {
+      background: rgba(0, 255, 255, 0.1);
+      border: 1px solid #0ff;
+      border-radius: 30px;
+      padding: 0.25rem 1rem;
+      font-size: 0.95rem;
+      color: #d0f0ff;
+      box-shadow: 0 0 12px rgba(0, 255, 255, 0.3);
+      transition: 0.2s;
+    }
+
+    .word-chip:hover {
+      background: #0ff;
+      color: #000;
+      box-shadow: 0 0 25px #0ff, 0 0 40px #f0f;
+    }
+
+    /* Wortwolke */
+    .wordcloud-box {
+      width: 100%;
+      height: 220px;
+      background: #060b12;
+      border-radius: 1.5rem;
+      border: 1px solid #0ff;
+      box-shadow: inset 0 0 30px #000, 0 0 25px #0ff;
+      margin-top: 1rem;
+	  position: relative;
+    }
+
+    /* Stoppwort-Toggle */
+    .stopword-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      margin-bottom: 1rem;
+      color: #aad0ff;
+      font-size: 0.95rem;
+      letter-spacing: 1px;
+    }
+
+    .stopword-toggle input {
+      appearance: none;
+      width: 45px;
+      height: 24px;
+      background: #1a2638;
+      border-radius: 30px;
+      position: relative;
+      cursor: pointer;
+      box-shadow: inset 0 0 8px #000, 0 0 10px #0ff3;
+      transition: 0.2s;
+    }
+
+    .stopword-toggle input:checked {
+      background: #0ff;
+      box-shadow: 0 0 20px #0ff, 0 0 30px #f0f;
+    }
+
+    .stopword-toggle input::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: #fff;
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: 0.2s;
+      box-shadow: 0 0 8px #fff;
+    }
+
+    .stopword-toggle input:checked::after {
+      left: 23px;
+      background: #000;
+    }
+
+    /* Footer / Hinweis */
+    .footnote {
+      text-align: center;
+      margin-top: 2rem;
+      font-size: 0.85rem;
+      color: #5f7f9f;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      text-shadow: 0 0 8px #0ff5;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0a101c;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #0ff;
+      border-radius: 10px;
+      box-shadow: 0 0 15px #0ff;
+    }
+	
+	.blocks, .blocks span { display:block !important; text-fit:shrink; }
+	
+  </style>
+</head>
+<body>
+  <div class="analyzer-container">
+    <h1>✦ TEXT ANALYSE ✦</h1>
+
+    <!-- Textarea -->
+    <textarea id="textInput" class="input-area" placeholder="Füge hier deinen Text ein ...">Die Neonlichter flackern im Dunkel der Nacht. Ein kalter Wind weht durch die verlassenen Straßen, während die Stadt in einem Meer aus Magenta und Cyan erstrahlt. Diese cinematic Atmosphäre ist atemberaubend. Aber wie lesbar ist dieser Text? Die Analyse zeigt es dir.</textarea>
+
+    <!-- Dashboard Grid -->
+    <div class="dashboard">
+      <!-- Panel 1: Basis-Statistiken -->
+      <div class="panel">
+        <h2>Basis</h2>
+        <ul class="stat-list" id="statsBasic">
+          <li><span class="stat-label">Zeichen (mit Leerzeichen)</span><span class="stat-value" id="charWithSpaces">0</span></li>
+          <li><span class="stat-label">Zeichen (ohne Leerzeichen)</span><span class="stat-value" id="charWithoutSpaces">0</span></li>
+          <li><span class="stat-label">Wörter (Whitespace)</span><span class="stat-value" id="wordsWhitespace">0</span></li>
+          <li><span class="stat-label">Wörter (Regex \p{L}+)</span><span class="stat-value" id="wordsRegex">0</span></li>
+          <li><span class="stat-label">Sätze (Satzzeichen)</span><span class="stat-value" id="sentenceCount">0</span></li>
+          <li><span class="stat-label">Absätze (Leerzeilen)</span><span class="stat-value" id="paragraphCount">0</span></li>
+        </ul>
+      </div>
+
+      <!-- Panel 2: Lesbarkeit -->
+      <div class="panel">
+        <h2>Lesbarkeit</h2>
+        <ul class="stat-list">
+          <li><span class="stat-label">Flesch (Amstad)</span><span class="stat-value" id="fleschScore">—</span></li>
+          <li><span class="stat-label">Wiener Sachtextformel</span><span class="stat-value" id="wienerScore">—</span></li>
+          <li><span class="stat-label">Ø Wortlänge (Zeichen)</span><span class="stat-value" id="avgWordLength">0</span></li>
+          <li><span class="stat-label">Ø Satzlänge (Wörter)</span><span class="stat-value" id="avgSentenceLength">0</span></li>
+        </ul>
+        <div style="margin-top: 1rem;">
+          <div style="display: flex; justify-content: space-between; color: #b0d0ff;">
+            <span>Anteil langer Wörter (&gt;6)</span>
+            <span id="longWordPercentLabel">0%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="longWordProgress" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 3: Wortschatz -->
+      <div class="panel">
+        <h2>Wortschatz</h2>
+        <ul class="stat-list">
+          <li><span class="stat-label">Unique Words</span><span class="stat-value" id="uniqueWords">0</span></li>
+          <li><span class="stat-label">Type-Token-Ratio</span><span class="stat-value" id="typeTokenRatio">0</span></li>
+          <li class="blocks"><span class="stat-label">Längstes Wort</span><span class="stat-value" id="longestWord">—</span></li>
+          <li class="blocks"><span class="stat-label">Wortlängen-Verteilung</span><span class="stat-value" id="wordLengthDistribution">—</span></li>
+        </ul>
+        <div style="margin-top: 1rem;">
+          <div class="stopword-toggle">
+            <input type="checkbox" id="stopwordToggle" checked>
+            <label for="stopwordToggle">Stoppwörter ausblenden (Top-Wörter)</label>
+          </div>
+          <div style="font-size: 0.95rem; color: #b0d0ff; margin-bottom: 0.3rem;">Häufigste Wörter:</div>
+          <div class="top-words" id="topWordsContainer"></div>
+        </div>
+      </div>
+
+      <!-- Panel 4: Zeit & Wortwolke -->
+      <div class="panel">
+        <h2>Zeit & Wolke</h2>
+        <ul class="stat-list">
+          <li><span class="stat-label">Lesezeit (200 W/min)</span><span class="stat-value" id="readingTime200">0 s</span></li>
+          <li><span class="stat-label">Lesezeit (250 W/min)</span><span class="stat-value" id="readingTime250">0 s</span></li>
+          <li><span class="stat-label">Sprechzeit (130 W/min)</span><span class="stat-value" id="speakingTime">0 s</span></li>
+        </ul>
+        <div class="wordcloud-box" id="wordcloudCanvas"></div>
+      </div>
+    </div>
+
+    <div class="footnote">✦ live analyse ✦</div>
+  </div>
+
+  <script>
+    (function() {
+      // ----- DOM Elemente -----
+      const textarea = document.getElementById('textInput');
+      const charWithSpaces = document.getElementById('charWithSpaces');
+      const charWithoutSpaces = document.getElementById('charWithoutSpaces');
+      const wordsWhitespace = document.getElementById('wordsWhitespace');
+      const wordsRegex = document.getElementById('wordsRegex');
+      const sentenceCount = document.getElementById('sentenceCount');
+      const paragraphCount = document.getElementById('paragraphCount');
+      const fleschScore = document.getElementById('fleschScore');
+      const wienerScore = document.getElementById('wienerScore');
+      const avgWordLength = document.getElementById('avgWordLength');
+      const avgSentenceLength = document.getElementById('avgSentenceLength');
+      const longWordPercentLabel = document.getElementById('longWordPercentLabel');
+      const longWordProgress = document.getElementById('longWordProgress');
+      const uniqueWordsSpan = document.getElementById('uniqueWords');
+      const typeTokenRatioSpan = document.getElementById('typeTokenRatio');
+      const longestWordSpan = document.getElementById('longestWord');
+      const wordLengthDistributionSpan = document.getElementById('wordLengthDistribution');
+      const topWordsContainer = document.getElementById('topWordsContainer');
+      const stopwordToggle = document.getElementById('stopwordToggle');
+      const readingTime200 = document.getElementById('readingTime200');
+      const readingTime250 = document.getElementById('readingTime250');
+      const speakingTime = document.getElementById('speakingTime');
+      const wordcloudCanvas = document.getElementById('wordcloudCanvas');
+
+      // Stoppwörter (Deutsch, gängige)
+      const STOPWORDS = new Set([
+        'der', 'die', 'das', 'den', 'dem', 'des', 'ein', 'eine', 'einer', 'eines', 'einem', 'einen',
+        'und', 'oder', 'aber', 'doch', 'sondern', 'denn', 'nun', 'so', 'wie', 'als', 'da', 'dort',
+        'ich', 'du', 'er', 'sie', 'es', 'wir', 'ihr', 'sie', 'mich', 'dich', 'sich', 'uns', 'euch',
+        'in', 'im', 'an', 'am', 'auf', 'mit', 'von', 'vom', 'bei', 'aus', 'nach', 'zu', 'zum', 'zur',
+        'über', 'unter', 'durch', 'für', 'gegen', 'ohne', 'um', 'sind', 'ist', 'war', 'wird', 'werden',
+        'hat', 'haben', 'hatte', 'hatten', 'kann', 'können', 'muss', 'müssen', 'soll', 'sollen', 'will',
+        'wollen', 'darf', 'dürfen', 'mag', 'mögen', 'nicht', 'kein', 'keine', 'keinen', 'keinem', 'keiner',
+        'auch', 'nur', 'noch', 'schon', 'sehr', 'mehr', 'weniger', 'viel', 'wenig', 'alle', 'alles',
+        'man', 'wer', 'was', 'wann', 'wo', 'warum', 'wieso', 'weshalb', 'welche', 'welcher', 'welches',
+        'dieser', 'diese', 'dieses', 'jener', 'jene', 'jenes', 'solcher', 'solche', 'solches'
+      ]);
+
+      // ----- Hilfsfunktionen -----
+      function updateAll() {
+        const text = textarea.value;
+        // Basis-Statistiken
+        const totalChars = text.length;
+        const charsNoSpaces = text.replace(/\s/g, '').length;
+        const wordsByWhitespace = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+        // Regex \p{L}+ (Unicode-Buchstaben)
+        const letterMatches = text.match(/\p{L}+/gu) || [];
+        const wordsByRegex = letterMatches.length;
+
+        // Sätze: Satzzeichen-basiert (. ! ? … eventuell kombiniert)
+        const sentences = text.split(/[.!?…]+/).filter(s => s.trim().length > 0);
+        const sentenceCountValue = sentences.length;
+
+        // Absätze: Leerzeilen (zwei aufeinanderfolgende Newlines, auch mit Leerzeichen)
+        const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 0);
+        const paragraphCountValue = paragraphs.length;
+
+        // ----- Für Lesbarkeit und Wortanalysen: Wörter als Array (Regex \p{L}+) -----
+        const words = letterMatches.map(w => w.toLowerCase()); // für Zählungen, Stoppwörter etc.
+        const wordCount = words.length; // entspricht wordsByRegex
+
+        // Durchschnittliche Wortlänge (basierend auf Buchstabenwörtern)
+        let totalWordLength = 0;
+        words.forEach(w => totalWordLength += w.length);
+        const avgWordLen = wordCount > 0 ? (totalWordLength / wordCount) : 0;
+
+        // Durchschnittliche Satzlänge (Wörter pro Satz)
+        const avgSentLen = sentenceCountValue > 0 ? (wordCount / sentenceCountValue) : 0;
+
+        // Lange Wörter (>6 Zeichen)
+        const longWords = words.filter(w => w.length > 6).length;
+        const longWordPercent = wordCount > 0 ? (longWords / wordCount) * 100 : 0;
+
+        // Flesch-Reading-Ease (Amstad für Deutsch)
+        // Formel: 180 - (ASL * 58.5) - (ASW * 0.5)   [ASL = durchschn. Satzlänge, ASW = durchschn. Silben pro Wort]
+        // Silben grob schätzen: Anzahl der Vokalgruppen (a,e,i,o,u,ä,ö,ü) pro Wort
+        function countSyllablesGerman(word) {
+          // Vokale inkl. Umlaute, pro Wort zählen (vereinfacht)
+          const vowelGroups = word.match(/[aeiouäöüy]+/gi);
+          return vowelGroups ? vowelGroups.length : 1;
+        }
+        let totalSyllables = 0;
+        words.forEach(w => { totalSyllables += countSyllablesGerman(w); });
+        const avgSyllablesPerWord = wordCount > 0 ? totalSyllables / wordCount : 0;
+        // Amstad: 180 - (ASL * 58.5) - (ASW * 0.5)  (ASL = average sentence length in words, ASW = average syllables per word)
+        const flesch = wordCount > 0 && sentenceCountValue > 0
+          ? 180 - (avgSentLen * 58.5) - (avgSyllablesPerWord * 0.5)
+          : 0;
+
+        // Wiener Sachtextformel (Version 1: MS = 0.1935*ASL + 0.1672*ASW + 0.1297*MSW - 0.0327*SL - 0.875)
+        // MSW = Prozent der Wörter mit mehr als 6 Buchstaben, SL = Prozent der Sätze mit mehr als 12 Wörtern? 
+        // Einfache Variante: Wiener Sachtextformel 1:
+        // MS = 0.1935 * ASL + 0.1672 * ASW + 0.1297 * MSW - 0.0327 * SL - 0.875
+        // Dabei: ASL = durchschnittliche Satzlänge (Wörter), ASW = durchschnittliche Silbenzahl pro Wort,
+        // MSW = Prozent der Wörter mit mehr als 6 Buchstaben, SL = Prozent der Sätze mit mehr als 12 Wörtern (hier als Anteil?)
+        // Vereinfachung: SL = (Sätze mit >12 Wörtern / Gesamtsätze) * 100
+        const sentencesArray = text.split(/[.!?…]+/).filter(s => s.trim().length > 0);
+        const longSentences = sentencesArray.filter(s => {
+          const w = s.trim().match(/\p{L}+/gu) || [];
+          return w.length > 12;
+        }).length;
+        const slPercent = sentencesArray.length > 0 ? (longSentences / sentencesArray.length) * 100 : 0;
+        const mswPercent = longWordPercent; // Anteil Wörter >6 Buchstaben in Prozent
+
+        const wiener = wordCount > 0 && sentenceCountValue > 0
+          ? 0.1935 * avgSentLen + 0.1672 * avgSyllablesPerWord + 0.1297 * mswPercent - 0.0327 * slPercent - 0.875
+          : 0;
+
+        // ----- Wortschatz: Unique Words, Type-Token-Ratio -----
+        const uniqueSet = new Set(words);
+        const uniqueCount = uniqueSet.size;
+        const ttr = wordCount > 0 ? (uniqueCount / wordCount) : 0;
+
+        // Längstes Wort (in Originalschreibweise, aber basierend auf Buchstabenwörtern)
+        let longest = '';
+        letterMatches.forEach(w => { if (w.length > longest.length) longest = w; });
+
+        // Wortlängen-Verteilung (kompakt: z.B. "1:2 2:5 3:10 ...")
+        const lengthMap = new Map();
+        words.forEach(w => {
+          const len = w.length;
+          lengthMap.set(len, (lengthMap.get(len) || 0) + 1);
+        });
+        const sortedLengths = Array.from(lengthMap.entries()).sort((a, b) => a[0] - b[0]);
+        const distributionStr = sortedLengths.map(([len, count]) => `${len}:${count}`).join('  ');
+
+        // Häufigste Wörter (Top 12), optional ohne Stoppwörter
+        const useStopwordsFilter = stopwordToggle.checked;
+        const freqMap = new Map();
+        words.forEach(w => {
+          if (useStopwordsFilter && STOPWORDS.has(w)) return;
+          freqMap.set(w, (freqMap.get(w) || 0) + 1);
+        });
+        const sortedFreq = Array.from(freqMap.entries()).sort((a, b) => b[1] - a[1]).slice(0, 12);
+
+        // ----- Zeit-Schätzungen (basierend auf Wortzahl (Regex)) -----
+        const wordCountForTime = wordCount; // alternativ wordsByWhitespace, aber Regex ist genauer
+        const reading200Sec = wordCountForTime > 0 ? (wordCountForTime / 200) * 60 : 0; // in Sekunden
+        const reading250Sec = wordCountForTime > 0 ? (wordCountForTime / 250) * 60 : 0;
+        const speakingSec = wordCountForTime > 0 ? (wordCountForTime / 130) * 60 : 0;
+
+        // Formatierung der Zeit (Minuten:Sekunden)
+        function formatTime(seconds) {
+          if (seconds === 0) return '0 s';
+          const mins = Math.floor(seconds / 60);
+          const secs = Math.round(seconds % 60);
+          if (mins > 0) return `${mins} min ${secs} s`;
+          return `${Math.round(seconds)} s`;
+        }
+
+        // ----- DOM Updates -----
+        charWithSpaces.textContent = totalChars;
+        charWithoutSpaces.textContent = charsNoSpaces;
+        wordsWhitespace.textContent = wordsByWhitespace;
+        wordsRegex.textContent = wordsByRegex;
+        sentenceCount.textContent = sentenceCountValue;
+        paragraphCount.textContent = paragraphCountValue;
+
+        fleschScore.textContent = wordCount > 0 ? flesch.toFixed(1) : '—';
+        wienerScore.textContent = wordCount > 0 ? wiener.toFixed(1) : '—';
+        avgWordLength.textContent = avgWordLen.toFixed(2);
+        avgSentenceLength.textContent = avgSentLen.toFixed(2);
+        longWordPercentLabel.textContent = longWordPercent.toFixed(1) + '%';
+        longWordProgress.style.width = longWordPercent + '%';
+
+        uniqueWordsSpan.textContent = uniqueCount;
+        typeTokenRatioSpan.textContent = ttr.toFixed(3);
+        longestWordSpan.textContent = longest || '—';
+        wordLengthDistributionSpan.textContent = distributionStr || '—';
+
+        // Top-Wörter rendern
+        topWordsContainer.innerHTML = '';
+        if (sortedFreq.length === 0) {
+          topWordsContainer.innerHTML = '<span style="color: #6f8faf;">Keine Wörter (evtl. alle gefiltert)</span>';
+        } else {
+          sortedFreq.forEach(([word, count]) => {
+            const chip = document.createElement('span');
+            chip.className = 'word-chip';
+            chip.textContent = `${word} (${count})`;
+            topWordsContainer.appendChild(chip);
+          });
+        }
+
+        // Zeiten
+        readingTime200.textContent = formatTime(reading200Sec);
+        readingTime250.textContent = formatTime(reading250Sec);
+        speakingTime.textContent = formatTime(speakingSec);
+
+        // ----- Wortwolke (wordcloud2.js) -----
+        // Basierend auf Häufigkeiten (ohne Stoppwörter, falls aktiviert)
+        const cloudWords = [];
+        const cloudFreqMap = new Map();
+        // Für die Wortwolke nehmen wir alle Wörter (gefiltert nach Stoppwörtern, wenn aktiv)
+        words.forEach(w => {
+          if (useStopwordsFilter && STOPWORDS.has(w)) return;
+          cloudFreqMap.set(w, (cloudFreqMap.get(w) || 0) + 1);
+        });
+        cloudFreqMap.forEach((count, word) => {
+          // wordcloud2 erwartet [word, weight]
+          cloudFreqMap.set(word, count);
+        });
+        const cloudList = Array.from(cloudFreqMap.entries()).map(([word, count]) => [word, count * 10]); // skalierung
+
+        // Canvas-Größe anpassen
+        const canvasEl = wordcloudCanvas;
+        const rect = canvasEl.getBoundingClientRect();
+        // WordCloud2 nutzt ein internes Canvas, wir übergeben das Element
+        if (cloudList.length > 0 && typeof WordCloud !== 'undefined') {
+          try {
+            WordCloud(canvasEl, {
+              list: cloudList,
+              gridSize: 8,
+              weightFactor: function (w) { return Math.min(60, w * 2 + 10); }, // dynamische Größe
+              fontFamily: 'Segoe UI, sans-serif',
+              color: function () {
+                const colors = ['#0ff', '#f0f', '#8f8', '#ff8', '#8ff', '#f8f', '#0ff', '#f0f'];
+                return colors[Math.floor(Math.random() * colors.length)];
+              },
+              backgroundColor: 'transparent',
+              rotateRatio: 0.3,
+              rotationSteps: 2,
+              minSize: 8,
+              weightMode: 'size',
+              clearCanvas: true,
+            });
+          } catch (e) {
+            console.warn('Wortwolke Fehler:', e);
+            canvasEl.innerHTML = '<div style="color:#0ff; text-align:center; padding:2rem;">Wortwolke nicht verfügbar</div>';
+          }
+        } else {
+          // Fallback: Canvas leeren und Nachricht
+          const ctx = canvasEl.getContext('2d');
+          if (ctx) {
+            ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+          }
+          canvasEl.innerHTML = '<div style="color:#5f7f9f; text-align:center; padding:2rem;">Keine Wörter für Wortwolke</div>';
+        }
+      }
+
+      // Event Listener
+      textarea.addEventListener('input', updateAll);
+      stopwordToggle.addEventListener('change', updateAll);
+
+      // Initiale Analyse
+      updateAll();
+
+      // Bei Größenänderung des Fensters ggf. Wortwolke neu zeichnen (optional)
+      window.addEventListener('resize', () => {
+        // Kurze Verzögerung, um Layout-Änderungen abzuwarten
+        setTimeout(updateAll, 100);
+      });
+    })();
+  </script>
+</body>
+</html>
